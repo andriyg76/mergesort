@@ -5,7 +5,7 @@ import (
 	"bufio"
 	"strings"
 	"io"
-	"log"
+	stdlog "log"
 )
 
 type Reader interface {
@@ -56,7 +56,7 @@ type fileReader struct {
 	gotEOF  bool
 }
 
-func NewAsyncFileReader(file DisposableIoReader, trace* log.Logger) (error, DisposableReader) {
+func NewAsyncFileReader(file DisposableIoReader, trace* stdlog.Logger) (error, DisposableReader) {
 	if file == nil {
 		return errors.New("null pointer exception: file"), nil
 	}

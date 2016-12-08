@@ -2,7 +2,7 @@ package mergesort
 
 import (
 	"io"
-	log "github.com/andriyg76/glogger"
+	"github.com/andriyg76/glogger"
 )
 
 type StrLess func(a, b string) bool
@@ -28,7 +28,7 @@ type combinedReaders struct {
 }
 
 func (i *combinedReaders) ReadLine() (error, string) {
-	log.Trace("State: %s %s errors: %v %v", i.one, i.two, i.err1, i.err2)
+	glogger.Trace("State: %s %s errors: %v %v", i.one, i.two, i.err1, i.err2)
 	if i.err1 != nil && i.err1 != io.EOF {
 		return i.err1, ""
 	} else if i.err2 != nil && i.err2 != io.EOF {
@@ -46,9 +46,9 @@ func (i *combinedReaders) ReadLine() (error, string) {
 		err, value = i.err2, i.two
 		i.err2, i.two = i.right.ReadLine()
 	} else {
-		log.Panic("%v %s %v %s", i.err1, i.one, i.err2, i.right)
+		glogger.Panic("%v %s %v %s", i.err1, i.one, i.err2, i.right)
 	}
-	log.Trace("Returning value: %s error: %v", value, err)
+	glogger.Trace("Returning value: %s error: %v", value, err)
 	return err, value
 }
 
