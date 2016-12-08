@@ -2,7 +2,7 @@ package mergesort
 
 import (
 	"io"
-	"github.com/andriyg76/glogger"
+	stdlog "log"
 )
 
 type StrLess func(a, b string) bool
@@ -25,10 +25,11 @@ type combinedReaders struct {
 	one, two    string
 	err1, err2  error
 	cmp         StrLess
+	trace       *stdlog.Logger
 }
 
 func (i *combinedReaders) ReadLine() (error, string) {
-	glogger.Trace("State: %s %s errors: %v %v", i.one, i.two, i.err1, i.err2)
+	i.trace.Printf("State: %s %s errors: %v %v", i.one, i.two, i.err1, i.err2)
 	if i.err1 != nil && i.err1 != io.EOF {
 		return i.err1, ""
 	} else if i.err2 != nil && i.err2 != io.EOF {
@@ -45,31 +46,30 @@ func (i *combinedReaders) ReadLine() (error, string) {
 	} else if !i.cmp(i.one, i.two) || i.err1 == io.EOF {
 		err, value = i.err2, i.two
 		i.err2, i.two = i.right.ReadLine()
-	} else {
-		glogger.Panic("%v %s %v %s", i.err1, i.one, i.err2, i.right)
 	}
-	glogger.Trace("Returning value: %s error: %v", value, err)
+	i.trace.Printf("Returning value: %s error: %v", value, err)
 	return err, value
 }
 
-func MergeTwoReaders(left, right Reader, cmp StrLess) Reader {
+func MergeTwoReaders(left, right Reader, cmp StrLess, trace *stdlog.Logger) Reader {
 	i := &combinedReaders{
 		left: left,
 		right: right,
 		cmp: cmp,
+		trace: trace,
 	}
 	i.err1, i.one = i.left.ReadLine()
 	i.err2, i.two = i.right.ReadLine()
 	return i
 }
 
-func MergeSort(cmp StrLess, readers... Reader) Reader {
+func MergeSort(cmp StrLess, trace *stdlog.Logger, readers... Reader) Reader {
 	if len(readers) == 0 {
 		return eof
 	} else if len(readers) == 1 {
 		return readers[0]
 	}
 	middle := len(readers) / 2
-	return MergeTwoReaders(MergeSort(cmp, readers[:middle]...),
-		MergeSort(cmp, readers[middle:]...), cmp)
+	return MergeTwoReaders(MergeSort(cmp, trace, readers[:middle]...),
+		MergeSort(cmp, trace, readers[middle:]...), cmp, trace)
 }
