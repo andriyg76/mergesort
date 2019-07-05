@@ -1,9 +1,9 @@
 package mergesort
 import (
-	"testing"
-	"github.com/stretchr/testify/assert"
 	"github.com/andriyg76/glogger"
+	"github.com/stretchr/testify/assert"
 	"io"
+	"testing"
 )
 
 type arrayReader struct {
@@ -76,7 +76,7 @@ func TestCombineReaders(t *testing.T) {
 	assert.Nil(t, err2)
 	assert.NotNil(t, reader2)
 
-	r := MergeTwoReaders(reader, reader2, AbcStrLess)
+	r := MergeTwoReaders(reader, reader2, AbcStrLess, log.TraceLogger())
 
 	var res []string
 
@@ -111,7 +111,7 @@ func TestCombineReaderWithEmpty(t *testing.T) {
 	assert.Nil(t, err2)
 	assert.NotNil(t, reader2)
 
-	r := MergeTwoReaders(reader, reader2, AbcStrLess)
+	r := MergeTwoReaders(reader, reader2, AbcStrLess, log.TraceLogger())
 
 	var res []string
 
@@ -152,7 +152,7 @@ func TestMergeSort(t *testing.T) {
 	assert.Nil(t, err3)
 	assert.NotNil(t, reader3)
 
-	r := MergeSort(AbcStrLess, reader, reader2, reader3)
+	r := MergeSort(AbcStrLess, log.TraceLogger(), reader, reader2, reader3)
 
 	var res []string
 

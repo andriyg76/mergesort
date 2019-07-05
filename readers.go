@@ -1,11 +1,11 @@
 package mergesort
 
 import (
-	"errors"
 	"bufio"
-	"strings"
+	"errors"
 	"io"
 	stdlog "log"
+	"strings"
 )
 
 type Reader interface {
