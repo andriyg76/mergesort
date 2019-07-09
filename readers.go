@@ -3,6 +3,7 @@ package mergesort
 import (
 	"bufio"
 	"errors"
+	"fmt"
 	"io"
 	stdlog "log"
 	"strings"
@@ -23,26 +24,31 @@ type arrayPos struct {
 	pos   int
 }
 
-func (i *arrayPos) ReadLine() (error, string)  {
+func (i *arrayPos) Close() error {
+	i = nil
+	return nil
+}
+
+func (i *arrayPos) ReadLine() (error, string) {
 	if i.pos >= len(i.array) {
 		return io.EOF, ""
 	}
 
-	val:= i.array[i.pos]
-	i.pos ++
+	val := i.array[i.pos]
+	i.pos++
 	return nil, val
 }
 
-func NewArrayReader(array []string) Reader {
+func NewArrayReader(array []string) DisposableReader {
 	return &arrayPos{
 		array: array,
-		pos: 0,
+		pos:   0,
 	}
 }
 
 type DisposableReader interface {
 	Reader
-	Close()
+	Close() error
 }
 
 type stringAndErr struct {
@@ -56,7 +62,7 @@ type fileReader struct {
 	gotEOF  bool
 }
 
-func NewAsyncFileReader(file DisposableIoReader, trace* stdlog.Logger) (error, DisposableReader) {
+func NewAsyncFileReader(file DisposableIoReader, trace *stdlog.Logger) (error, DisposableReader) {
 	if file == nil {
 		return errors.New("null pointer exception: file"), nil
 	}
@@ -64,7 +70,7 @@ func NewAsyncFileReader(file DisposableIoReader, trace* stdlog.Logger) (error, D
 	fileRrd := bufio.NewReader(file)
 
 	reader := &fileReader{
-		file: file,
+		file:    file,
 		channel: make(chan stringAndErr),
 	}
 
@@ -81,24 +87,41 @@ func NewAsyncFileReader(file DisposableIoReader, trace* stdlog.Logger) (error, D
 			}
 			reader.channel <- stringAndErr{
 				string: line,
-				error: err,
+				error:  err,
 			}
 			if err == io.EOF {
 				reader.Close()
 				break
 			}
 		}
-	}();
+	}()
 
 	return nil, reader
 }
 
-func (i *fileReader) Close() {
+type MultipleErrors struct {
+	errors []error
+}
+
+func (i MultipleErrors) Error() string {
+	return fmt.Sprintf("Multiple errors: %s", i.errors)
+}
+
+func (i *fileReader) Close() error {
+	var errors []error
 	if i.file != nil {
-		i.file.Close()
+		if err := i.file.Close(); err != nil {
+			errors = append(errors, err)
+		}
 	}
 
 	close(i.channel)
+	if len(errors) != 0 {
+		return MultipleErrors{
+			errors: errors,
+		}
+	}
+	return nil
 }
 
 func (i *fileReader) ReadLine() (error, string) {
