@@ -13,20 +13,9 @@ type Reader interface {
 	ReadLine() (error, string)
 }
 
-// Composition of reader and close, os.File have to match
-type DisposableIoReader interface {
-	io.Reader
-	io.Closer
-}
-
 type arrayPos struct {
 	array []string
 	pos   int
-}
-
-func (i *arrayPos) Close() error {
-	i = nil
-	return nil
 }
 
 func (i *arrayPos) ReadLine() (error, string) {
@@ -39,16 +28,11 @@ func (i *arrayPos) ReadLine() (error, string) {
 	return nil, val
 }
 
-func NewArrayReader(array []string) DisposableReader {
+func NewArrayReader(array []string) Reader {
 	return &arrayPos{
 		array: array,
 		pos:   0,
 	}
-}
-
-type DisposableReader interface {
-	Reader
-	Close() error
 }
 
 type stringAndErr struct {
@@ -57,12 +41,12 @@ type stringAndErr struct {
 }
 
 type fileReader struct {
-	file    DisposableIoReader
+	file    io.Reader
 	channel chan stringAndErr
 	gotEOF  bool
 }
 
-func NewAsyncFileReader(file DisposableIoReader, trace *stdlog.Logger) (error, DisposableReader) {
+func NewAsyncFileReader(file io.Reader, trace *stdlog.Logger) (error, Reader) {
 	if file == nil {
 		return errors.New("null pointer exception: file"), nil
 	}
@@ -90,7 +74,6 @@ func NewAsyncFileReader(file DisposableIoReader, trace *stdlog.Logger) (error, D
 				error:  err,
 			}
 			if err == io.EOF {
-				reader.Close()
 				break
 			}
 		}
@@ -105,23 +88,6 @@ type MultipleErrors struct {
 
 func (i MultipleErrors) Error() string {
 	return fmt.Sprintf("Multiple errors: %s", i.errors)
-}
-
-func (i *fileReader) Close() error {
-	var errors []error
-	if i.file != nil {
-		if err := i.file.Close(); err != nil {
-			errors = append(errors, err)
-		}
-	}
-
-	close(i.channel)
-	if len(errors) != 0 {
-		return MultipleErrors{
-			errors: errors,
-		}
-	}
-	return nil
 }
 
 func (i *fileReader) ReadLine() (error, string) {
