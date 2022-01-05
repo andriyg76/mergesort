@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	stdlog "log"
 	"strings"
 )
 
@@ -46,7 +45,11 @@ type fileReader struct {
 	gotEOF  bool
 }
 
-func NewAsyncFileReader(file io.Reader, trace *stdlog.Logger) (error, Reader) {
+type Trace interface {
+	Printf(format string, args ...interface{})
+}
+
+func NewAsyncFileReader(file io.Reader, trace Trace) (error, Reader) {
 	if file == nil {
 		return errors.New("null pointer exception: file"), nil
 	}

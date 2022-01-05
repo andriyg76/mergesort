@@ -1,17 +1,25 @@
 package mergesort
+
 import (
-	"github.com/andriyg76/glogger"
 	"github.com/stretchr/testify/assert"
 	"io"
+	log2 "log"
 	"testing"
 )
+
+type logger struct {
+}
+
+func (l logger) Printf(format string, args ...interface{}) {
+	log2.Printf(format, args...)
+}
+
+var log = logger{}
 
 type arrayReader struct {
 	position int
 	slice    []byte
 }
-
-var log = glogger.Create(glogger.TRACE)
 
 func (i *arrayReader) Close() error {
 	i.slice = nil
@@ -24,7 +32,7 @@ func (i *arrayReader) Read(target []byte) (int, error) {
 	}
 	read := copy(target, i.slice[i.position:])
 	i.position += read
-	log.Debug("Read %s bytes %s", read, target[:read])
+	log.Printf("Read %d bytes %v", read, target[:read])
 	if i.position >= len(i.slice) {
 		i.slice = nil
 	}
@@ -32,7 +40,7 @@ func (i *arrayReader) Read(target []byte) (int, error) {
 }
 
 func TestAsyncFileReader(t *testing.T) {
-	err, _ := NewAsyncFileReader(nil, log.TraceLogger())
+	err, _ := NewAsyncFileReader(nil, log)
 
 	t.Log(err)
 
@@ -40,7 +48,7 @@ func TestAsyncFileReader(t *testing.T) {
 
 	err, reader := NewAsyncFileReader(&arrayReader{
 		slice: []byte("string\r\nst\rring2\r\n"),
-	}, log.TraceLogger())
+	}, log)
 
 	assert.Nil(t, err)
 	assert.NotNil(t, reader)
@@ -64,24 +72,24 @@ func TestAsyncFileReader(t *testing.T) {
 func TestCombineReaders(t *testing.T) {
 	err, reader := NewAsyncFileReader(&arrayReader{
 		slice: []byte("\n67\n8\n99\n"),
-	}, log.TraceLogger())
+	}, log)
 
 	assert.Nil(t, err)
 	assert.NotNil(t, reader)
 
 	err2, reader2 := NewAsyncFileReader(&arrayReader{
 		slice: []byte("7\n9\n"),
-	}, log.TraceLogger())
+	}, log)
 
 	assert.Nil(t, err2)
 	assert.NotNil(t, reader2)
 
-	r := MergeTwoReaders(reader, reader2, AbcStrLess, log.TraceLogger())
+	r := MergeTwoReaders(reader, reader2, AbcStrLess, log)
 
 	var res []string
 
 	for {
-		log.Debug("MergeReaders state %s", r)
+		log.Printf("MergeReaders state %s", r)
 		e, s := r.ReadLine()
 		if e != nil && e != io.EOF {
 			assert.Fail(t, "error ", e)
@@ -99,19 +107,19 @@ func TestCombineReaders(t *testing.T) {
 func TestCombineReaderWithEmpty(t *testing.T) {
 	err, reader := NewAsyncFileReader(&arrayReader{
 		slice: []byte("\n8\n67\n99\n"),
-	}, log.TraceLogger())
+	}, log)
 
 	assert.Nil(t, err)
 	assert.NotNil(t, reader)
 
 	err2, reader2 := NewAsyncFileReader(&arrayReader{
 		slice: []byte(""),
-	}, log.TraceLogger())
+	}, log)
 
 	assert.Nil(t, err2)
 	assert.NotNil(t, reader2)
 
-	r := MergeTwoReaders(reader, reader2, AbcStrLess, log.TraceLogger())
+	r := MergeTwoReaders(reader, reader2, AbcStrLess, log)
 
 	var res []string
 
@@ -133,31 +141,31 @@ func TestCombineReaderWithEmpty(t *testing.T) {
 func TestMergeSort(t *testing.T) {
 	err, reader := NewAsyncFileReader(&arrayReader{
 		slice: []byte("67\n8\n99"),
-	}, log.TraceLogger())
+	}, log)
 
 	assert.Nil(t, err)
 	assert.NotNil(t, reader)
 
 	err2, reader2 := NewAsyncFileReader(&arrayReader{
 		slice: []byte("7\n9"),
-	}, log.TraceLogger())
+	}, log)
 
 	assert.Nil(t, err2)
 	assert.NotNil(t, reader2)
 
 	err3, reader3 := NewAsyncFileReader(&arrayReader{
 		slice: []byte("77\n88"),
-	}, log.TraceLogger())
+	}, log)
 
 	assert.Nil(t, err3)
 	assert.NotNil(t, reader3)
 
-	r := MergeSort(AbcStrLess, log.TraceLogger(), reader, reader2, reader3)
+	r := MergeSort(AbcStrLess, log, reader, reader2, reader3)
 
 	var res []string
 
 	for {
-		log.Debug("MergeReaders state %s", r)
+		log.Printf("MergeReaders state %s", r)
 		e, s := r.ReadLine()
 		if e != nil && e != io.EOF {
 			assert.Fail(t, "error ", e)

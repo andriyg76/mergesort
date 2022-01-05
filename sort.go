@@ -2,7 +2,6 @@ package mergesort
 
 import (
 	"io"
-	stdlog "log"
 )
 
 type StrLess func(a, b string) bool
@@ -20,12 +19,16 @@ func (i *eofReader) ReadLine() (error, string) {
 
 var eof = &eofReader{}
 
+type Output interface {
+	Printf(format string, args ...interface{})
+}
+
 type combinedReaders struct {
 	left, right Reader
 	one, two    string
 	err1, err2  error
 	cmp         StrLess
-	trace       *stdlog.Logger
+	trace       Output
 }
 
 func (i *combinedReaders) ReadLine() (error, string) {
@@ -51,11 +54,11 @@ func (i *combinedReaders) ReadLine() (error, string) {
 	return err, value
 }
 
-func MergeTwoReaders(left, right Reader, cmp StrLess, trace *stdlog.Logger) Reader {
+func MergeTwoReaders(left, right Reader, cmp StrLess, trace Output) Reader {
 	i := &combinedReaders{
-		left: left,
+		left:  left,
 		right: right,
-		cmp: cmp,
+		cmp:   cmp,
 		trace: trace,
 	}
 	i.err1, i.one = i.left.ReadLine()
@@ -63,7 +66,7 @@ func MergeTwoReaders(left, right Reader, cmp StrLess, trace *stdlog.Logger) Read
 	return i
 }
 
-func MergeSort(cmp StrLess, trace *stdlog.Logger, readers... Reader) Reader {
+func MergeSort(cmp StrLess, trace Output, readers ...Reader) Reader {
 	if len(readers) == 0 {
 		return eof
 	} else if len(readers) == 1 {
