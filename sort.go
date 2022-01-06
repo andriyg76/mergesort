@@ -19,16 +19,12 @@ func (i *eofReader) ReadLine() (error, string) {
 
 var eof = &eofReader{}
 
-type Output interface {
-	Printf(format string, args ...interface{})
-}
-
 type combinedReaders struct {
 	left, right Reader
 	one, two    string
 	err1, err2  error
 	cmp         StrLess
-	trace       Output
+	trace       Trace
 }
 
 func (i *combinedReaders) ReadLine() (error, string) {
@@ -54,7 +50,7 @@ func (i *combinedReaders) ReadLine() (error, string) {
 	return err, value
 }
 
-func MergeTwoReaders(left, right Reader, cmp StrLess, trace Output) Reader {
+func MergeTwoReaders(left, right Reader, cmp StrLess, trace Trace) Reader {
 	i := &combinedReaders{
 		left:  left,
 		right: right,
@@ -66,7 +62,7 @@ func MergeTwoReaders(left, right Reader, cmp StrLess, trace Output) Reader {
 	return i
 }
 
-func MergeSort(cmp StrLess, trace Output, readers ...Reader) Reader {
+func MergeSort(cmp StrLess, trace Trace, readers ...Reader) Reader {
 	if len(readers) == 0 {
 		return eof
 	} else if len(readers) == 1 {
